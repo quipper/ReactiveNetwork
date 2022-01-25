@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 @Open public class SocketInternetObservingStrategy implements InternetObservingStrategy {
   private static final String EMPTY_STRING = "";
   private static final String DEFAULT_HOST = "www.google.com";
-  private static final String HTTP_PROTOCOL = "http://";
   private static final String HTTPS_PROTOCOL = "https://";
 
   @Override public String getDefaultPingHost() {
@@ -80,9 +79,7 @@ import java.util.concurrent.TimeUnit;
    * @return transformed host
    */
   protected String adjustHost(final String host) {
-    if (host.startsWith(HTTP_PROTOCOL)) {
-      return host.replace(HTTP_PROTOCOL, EMPTY_STRING);
-    } else if (host.startsWith(HTTPS_PROTOCOL)) {
+    if (host.startsWith(HTTPS_PROTOCOL)) {
       return host.replace(HTTPS_PROTOCOL, EMPTY_STRING);
     }
     return host;

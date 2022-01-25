@@ -64,6 +64,7 @@ android {
     api deps.rxjava2
     api deps.rxandroid2
     implementation deps.annotation
+    implementation deps.okhttp
 
     testImplementation deps.junit
     testImplementation deps.truth

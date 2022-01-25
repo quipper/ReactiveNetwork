@@ -26,6 +26,12 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -40,9 +46,7 @@ import javax.net.ssl.HttpsURLConnection;
  * if a device is connected to the Internet or not.
  */
 @Open public class WalledGardenInternetObservingStrategy implements InternetObservingStrategy {
-  private static final String DEFAULT_HOST = "http://clients3.google.com/generate_204";
-  private static final String HTTP_PROTOCOL = "http://";
-  private static final String HTTPS_PROTOCOL = "https://";
+  private static final String DEFAULT_HOST = "https://clients3.google.com/generate_204";
 
   @Override public String getDefaultPingHost() {
     return DEFAULT_HOST;
@@ -80,10 +84,6 @@ import javax.net.ssl.HttpsURLConnection;
   }
 
   protected String adjustHost(final String host) {
-    if (!host.startsWith(HTTP_PROTOCOL) && !host.startsWith(HTTPS_PROTOCOL)) {
-      return HTTPS_PROTOCOL.concat(host);
-    }
-
     return host;
   }
 
@@ -99,45 +99,34 @@ import javax.net.ssl.HttpsURLConnection;
 
   protected Boolean isConnected(final String host, final int port, final int timeoutInMs,
       final int httpResponse, final ErrorHandler errorHandler) {
-    HttpURLConnection urlConnection = null;
     try {
-      if (host.startsWith(HTTPS_PROTOCOL)) {
-        urlConnection = createHttpsUrlConnection(host, port, timeoutInMs);
-      } else {
-        urlConnection = createHttpUrlConnection(host, port, timeoutInMs);
-      }
-      return urlConnection.getResponseCode() == httpResponse;
+      Response response = createResponse(host, port, timeoutInMs);
+      return response.code() == httpResponse;
     } catch (IOException e) {
       errorHandler.handleError(e, "Could not establish connection with WalledGardenStrategy");
       return Boolean.FALSE;
-    } finally {
-      if (urlConnection != null) {
-        urlConnection.disconnect();
-      }
     }
   }
 
-  protected HttpURLConnection createHttpUrlConnection(final String host, final int port,
-      final int timeoutInMs) throws IOException {
-    URL initialUrl = new URL(host);
-    URL url = new URL(initialUrl.getProtocol(), initialUrl.getHost(), port, initialUrl.getFile());
-    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-    urlConnection.setConnectTimeout(timeoutInMs);
-    urlConnection.setReadTimeout(timeoutInMs);
-    urlConnection.setInstanceFollowRedirects(false);
-    urlConnection.setUseCaches(false);
-    return urlConnection;
-  }
+  protected Response createResponse(final String host, final int port,
+                             final int timeoutInMs) throws IOException {
+    HttpUrl httpUrl = new HttpUrl.Builder()
+            .host(host)
+            .port(port)
+            .build();
 
-  protected HttpsURLConnection createHttpsUrlConnection(final String host, final int port,
-      final int timeoutInMs) throws IOException {
-    URL initialUrl = new URL(host);
-    URL url = new URL(initialUrl.getProtocol(), initialUrl.getHost(), port, initialUrl.getFile());
-    HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-    urlConnection.setConnectTimeout(timeoutInMs);
-    urlConnection.setReadTimeout(timeoutInMs);
-    urlConnection.setInstanceFollowRedirects(false);
-    urlConnection.setUseCaches(false);
-    return urlConnection;
+    Request request = new Request.Builder()
+            .url(host)
+            .url(httpUrl)
+            .build();
+
+    OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(timeoutInMs, TimeUnit.MILLISECONDS)
+            .build();
+
+    Call call = client.newCall(request);
+    Response response = call.execute();
+
+    return response;
   }
 }
