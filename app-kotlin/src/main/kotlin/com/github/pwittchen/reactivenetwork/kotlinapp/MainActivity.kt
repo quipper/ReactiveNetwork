@@ -44,19 +44,23 @@ class MainActivity : Activity() {
     connectivityDisposable = ReactiveNetwork.observeNetworkConnectivity(applicationContext)
       .subscribeOn(Schedulers.io())
       .observeOn(AndroidSchedulers.mainThread())
-      .subscribe { connectivity ->
+      .subscribe ({ connectivity ->
         Log.d(TAG, connectivity.toString())
         val state = connectivity.state()
         val name = connectivity.typeName()
         connectivity_status.text = String.format("state: %s, typeName: %s", state, name)
-      }
+      }, {
+        connectivity_status.text = it.message
+      })
 
     internetDisposable = ReactiveNetwork.observeInternetConnectivity()
       .subscribeOn(Schedulers.io())
       .observeOn(AndroidSchedulers.mainThread())
-      .subscribe { isConnectedToInternet ->
+      .subscribe ({ isConnectedToInternet ->
         internet_status.text = isConnectedToInternet.toString()
-      }
+      }, {
+        internet_status.text = it.message
+      })
   }
 
   override fun onPause() {

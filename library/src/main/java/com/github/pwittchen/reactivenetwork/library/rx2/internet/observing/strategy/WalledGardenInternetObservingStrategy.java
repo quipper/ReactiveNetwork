@@ -47,6 +47,12 @@ import javax.net.ssl.HttpsURLConnection;
  */
 @Open public class WalledGardenInternetObservingStrategy implements InternetObservingStrategy {
   private static final String DEFAULT_HOST = "https://clients3.google.com/generate_204";
+  private OkHttpClient client;
+
+  public WalledGardenInternetObservingStrategy() {
+    client = new OkHttpClient.Builder()
+            .build();
+  }
 
   @Override public String getDefaultPingHost() {
     return DEFAULT_HOST;
@@ -110,23 +116,12 @@ import javax.net.ssl.HttpsURLConnection;
 
   protected Response createResponse(final String host, final int port,
                              final int timeoutInMs) throws IOException {
-    HttpUrl httpUrl = new HttpUrl.Builder()
-            .host(host)
-            .port(port)
-            .build();
 
     Request request = new Request.Builder()
             .url(host)
-            .url(httpUrl)
-            .build();
-
-    OkHttpClient client = new OkHttpClient.Builder()
-            .connectTimeout(timeoutInMs, TimeUnit.MILLISECONDS)
             .build();
 
     Call call = client.newCall(request);
-    Response response = call.execute();
-
-    return response;
+    return call.execute();
   }
 }
